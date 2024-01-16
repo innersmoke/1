@@ -1,0 +1,202 @@
+#Loading necessary packages.
+library(rpart)
+library(rpart)
+install.packages("rpart.plot")
+library(rpart.plot)
+
+#Assigning the dataset to a variable.
+delays.df<-FlightDelays
+
+#Viewing the dataset.
+View(delays.df)
+
+#Removing columns Dep_time, FL_date, FL_num, day_of_month, Tail_num.
+delays.df<-delays.df[,-c(3,6,7,11,12)]
+
+#Reviewing dataset after removing columns.
+View(delays.df)
+
+#Show list of data type of all columns.
+lapply(delays.df, class)
+
+#Transforming the column DAY_WEEK to a factor.
+delays.df$DAY_WEEK<-as.factor(delays.df$DAY_WEEK)
+
+#Transforming the colum weather into a factor.
+delays.df$Weather<-as.factor(delays.df$Weather)
+
+#Divide data points in DEP_TIME by 100 and separating the data into 8 bins.
+delays.df$CRS_DEP_TIME<-cut(delays.df$CRS_DEP_TIME/100,8)
+
+#View the distinct categories created in DEP_TIME.
+unique(delays.df$CRS_DEP_TIME)
+
+
+set.seed(100)
+
+#Creating index for training data with random 60% of data points.
+train.index<-sample(c(1:dim(delays.df)[1]), dim(delays.df)[1]*0.6) 
+
+#Creating index for validation data with remaining 40% of data points.
+valid.index<-setdiff(c(1:dim(delays.df)[1]),train.index)
+
+#Creating new df with training data.
+train.df<-delays.df[train.index,]
+
+#Creating new df with validation data.
+valid.df<-delays.df[valid.index,]
+
+train.df
+valid.df
+
+#Creating a decision tree model with train data.
+delays.dt<-rpart(Flight.Status~.,
+                 data=train.df,
+                 method='class',
+                 cp=0.001,maxdepth=8, model= TRUE)
+delays.dt
+
+#Plotting the decision tree.
+prp(delays.dt)
+
+#Pruning branches of decision tree to reduce complexity.
+prunefit<-prune(delays.dt,
+                cp=delays.dt$cptable[which.min(delays.dt$cptable[,'xerror']),'CP'])
+
+#Plotting the new decision tree.
+prp(prunefit)
+
+#Creating a decision tree model not including Weather column.
+delays.dt<-rpart(Flight.Status~.,
+                 data=train.df[,-6],
+                 method='class',
+                 cp=0.001,maxdepth=8, model= TRUE)
+delays.dt
+
+#Plotting the model.
+prp(delays.dt)
+
+#Pruning the model.
+prunefit<-prune(delays.dt,
+                cp=delays.dt.
+                dt$cptable[which.min(delays.dt$cptable[,'xerror']),'CP'])
+
+#Plotting the pruned model.
+prp(prunefit)
+
+
+## 11.3
+#Assigning the dataset to a variable
+toyota.df<-ToyotaCorolla
+View(toyota.df)
+
+#Creating a dummy variable for CNG
+toyota.df$Fuel_Type_CNG <- 1*(toyota.df$V8 =='CNG')
+
+#Creating a dummy variable for Diesel
+toyota.df$Fuel_Type_Diesel<-1*(toyota.df$V8 =='Diesel')
+
+
+set.seed(1)
+train.index <- sample(row.names(toyota.df), 0.6*dim(toyota.df)[1])  
+valid.index <- setdiff(row.names(toyota.df), train.index)  
+train.df <- toyota.df[train.index, ]
+valid.df <- toyota.df[valid.index, ]
+
+
+##scale
+library(caret)
+library(neuralnet)
+
+norm.values <- preProcess(train.df, method="range")
+train.norm.df <- predict(norm.values, train.df)
+valid.norm.df <- predict(norm.values, valid.df)
+
+nn <- neuralnet(toyota.df$V3 ~ Age_08_04+
+                  KM+              
+                  Fuel_Type_CNG+  
+                  Fuel_Type_Diesel+
+                  HP+    
+                  Automatic+
+                  Doors+
+                  Quarterly_Tax+
+                  Mfr_Guarantee+
+                  Guarantee_Period+
+                  Airco+            
+                  Automatic_airco+
+                  CD_Player+  
+                  Powered_Windows+
+                  Sport_Model+
+                  Tow_Bar,
+                data = train.norm.df, linear.output = T,
+                hidden = 2)
+plot(nn)
+
+
+training.prediction <- compute(nn, train.norm.df)
+# predictions on validation data
+validation.prediction <- compute(nn, valid.norm.df)
+
+library(forecast)
+RMSE(training.prediction$net.result,train.norm.df$Price)
+RMSE(validation.prediction$net.result,valid.norm.df$Price)
+
+
+
+nn <- neuralnet(Price ~ Age_08_04+
+                  KM+              
+                  Fuel_Type_CNG+  
+                  Fuel_Type_Diesel+
+                  HP+    
+                  Automatic+
+                  Doors+
+                  Quarterly_Tax+
+                  Mfr_Guarantee+
+                  Guarantee_Period+
+                  Airco+            
+                  Automatic_airco+
+                  CD_Player+  
+                  Powered_Windows+
+                  Sport_Model+
+                  Tow_Bar,
+                data = train.norm.df, linear.output = T,
+                hidden = 5)
+plot(nn)
+
+
+training.prediction <- compute(nn, train.norm.df)
+# predictions on validation data
+validation.prediction <- compute(nn, valid.norm.df)
+
+library(forecast)
+RMSE(training.prediction$net.result,train.norm.df$Price)
+RMSE(validation.prediction$net.result,valid.norm.df$Price)
+
+nn <- neuralnet(Price ~ Age_08_04+
+                  KM+              
+                  Fuel_Type_CNG+  
+                  Fuel_Type_Diesel+
+                  HP+    
+                  Automatic+
+                  Doors+
+                  Quarterly_Tax+
+                  Mfr_Guarantee+
+                  Guarantee_Period+
+                  Airco+            
+                  Automatic_airco+
+                  CD_Player+  
+                  Powered_Windows+
+                  Sport_Model+
+                  Tow_Bar,
+                data = train.norm.df, linear.output = T,
+                hidden = c(5,5))
+plot(nn)
+
+
+training.prediction <- compute(nn, train.norm.df)
+# predictions on validation data
+validation.prediction <- compute(nn, valid.norm.df)
+
+library(forecast)
+RMSE(training.prediction$net.result,train.norm.df$Price)
+RMSE(validation.prediction$net.result,valid.norm.df$Price)
